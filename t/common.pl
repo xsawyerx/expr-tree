@@ -20,6 +20,7 @@ sub is_sub_tree {
 
 sub padop {
     my ($op, $name, $outer, $value) = @_;
+    $outer //= 0;
     return {
         op => $op,
         pad_entry => {
