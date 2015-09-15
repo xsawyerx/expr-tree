@@ -84,6 +84,8 @@ $ops{nextstate} = sub {
     return ();
 };
 
+$ops{push} =
+$ops{unshift} =
 $ops{list} =
 $ops{leave} =
 $ops{scope} =
@@ -170,7 +172,19 @@ sub {
     };
 };
 
-$ops{rv2av} =
+$ops{rv2av} = sub {
+    my ($scope, $op) = @_;
+
+    if ($op->name eq "null" && opname($op->first) eq "aelemfast") {
+        return expr($scope, $op->first);
+    }
+
+    return {
+        op => opname($op),
+        arg => expr($scope, $op->first),
+    };
+};
+
 $ops{rv2hv} = sub {
     my ($scope, $op) = @_;
     return {
@@ -220,13 +234,36 @@ $ops{helem} = sub {
     };
 };
 
-$ops{sassign} = sub {
+$ops{sassign} =
+$ops{aassign} = sub {
     my ($scope, $op) = @_;
     return {
         op => opname($op),
         rvalue => expr($scope, $op->first),
         lvalue => expr($scope, $op->last),
     };
+};
+
+$ops{pop} =
+$ops{shift} = sub {
+    my ($scope, $op) = @_;
+
+    my $class = ref $op;
+    if ($class eq "B::UNOP") {
+        return {
+            op => opname($op),
+            arg => expr($scope, $op->first),
+        };
+    }
+    elsif ($class eq "B::OP") {
+        return {
+            op => opname($op),
+            arg => undef,
+        };
+    }
+    else {
+        die "unknown op_shift class: $class";
+    }
 };
 
 1;

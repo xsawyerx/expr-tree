@@ -75,3 +75,11 @@ sub binop {
     };
 }
 
+sub listop {
+    my ($op, @list) = @_;
+    return {
+        op => $op,
+        list => [ @list ],
+    };
+}
+
