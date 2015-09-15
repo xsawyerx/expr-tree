@@ -47,7 +47,7 @@ sub expr {
     local @$scope{keys %args} = values %args;
 
     my $type = ref $op;
-    my $name = $op->name;
+    my $name = opname($op);
     my $impl = $ops{$name} // die "unsupported op $name of type $type";
 
     return $impl->($scope, $op);
@@ -69,6 +69,7 @@ sub build {
 }
 
 $ops{null} =
+$ops{scalar} =
 $ops{entersub} =
 $ops{leavesub} = sub {
     my ($scope, $op) = @_;
@@ -78,6 +79,7 @@ $ops{leavesub} = sub {
 
 $ops{enter} =
 $ops{padrange} =
+$ops{pushmark} =
 $ops{nextstate} = sub {
     return ();
 };
@@ -148,21 +150,6 @@ sub {
             expr($scope, $op->first->sibling),
         ],
     };
-};
-
-$ops{null} =
-$ops{scalar} = sub {
-    my ($scope, $op) = @_;
-    my $class = ref $op;
-    if ($class eq "B::UNOP") {
-        return expr($scope, $op->first);
-    }
-    elsif ($class eq "B::OP") {
-        return ();
-    }
-    else {
-        die "unknown op_null class: $class";
-    }
 };
 
 $ops{add} =
