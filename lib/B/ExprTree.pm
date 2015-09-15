@@ -220,6 +220,15 @@ $ops{helem} = sub {
     };
 };
 
+$ops{sassign} = sub {
+    my ($scope, $op) = @_;
+    return {
+        op => opname($op),
+        rvalue => expr($scope, $op->first),
+        lvalue => expr($scope, $op->last),
+    };
+};
+
 1;
 
 =head1 NAME
