@@ -164,6 +164,16 @@ $ops{bit_or} =
 $ops{bit_xor} =
 $ops{left_shift} =
 $ops{right_shift} =
+$ops{eq} =
+$ops{le} =
+$ops{lt} =
+$ops{ge} =
+$ops{gt} =
+$ops{seq} =
+$ops{sle} =
+$ops{slt} =
+$ops{sge} =
+$ops{sgt} =
 sub {
     my ($scope, $op) = @_;
     return {
