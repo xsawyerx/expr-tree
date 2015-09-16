@@ -9,7 +9,7 @@ my ($a, $b, $c, $d);
 
 is_sub_tree(
     sub { $a + $b - 24 * $c / $d % 42 },
-    
+
     binop("subtract",
         binop("add",
             padsv("a", 1),

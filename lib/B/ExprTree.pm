@@ -13,7 +13,7 @@ sub codevars {
     my ($names, $values) = $obj->PADLIST->ARRAY;
     my @names = $names->ARRAY;
     my @values = $values->ARRAY;
-    
+
     my @res;
     foreach my $idx (0 .. $#names) {
         my $name_sv = $names[$idx];
@@ -21,7 +21,7 @@ sub codevars {
 
         my $name = $is_special ? "<special>" : $name_sv->PV;
         my $value_ref = $values[$idx]->object_2svref;
-    
+
         push @res, {
             name => $name,
             value => $value_ref,
@@ -35,7 +35,7 @@ sub codevars {
 sub opname {
     my $op = shift;
     my $name = $op->name;
-    return $name eq "null" 
+    return $name eq "null"
         ? substr B::ppname($op->targ), 3
         : $name;
 }
@@ -161,7 +161,7 @@ $ops{divide} =
 $ops{modulo} =
 $ops{bit_and} =
 $ops{bit_or} =
-$ops{bit_xor} = 
+$ops{bit_xor} =
 $ops{left_shift} =
 $ops{right_shift} =
 sub {
@@ -199,7 +199,7 @@ $ops{aelem} = sub {
     if (ref $op eq "B::UNOP" && $op->name eq "null") {
         return expr($scope, $op->first);
     };
-    
+
     return {
         op => opname($op),
         array => expr($scope, $op->first),
