@@ -74,11 +74,8 @@ is_sub_tree(
 
 is_sub_tree(
     sub { my $x = my $y },
-    {
-        op => "sassign",
-        lvalue => padsv("x"),
-        rvalue => padsv("y"),
-    },
-);
+    assign("sassign",
+        padsv("x"),
+        padsv("y")));
 
 done_testing;

@@ -19,40 +19,31 @@ is_sub_tree(
         my @a = (1, 2);
     },
 
-    {
-        op => "aassign",
-        lvalue => listop("list", padav("a")),
-        rvalue => listop("list", const(\1), const(\2)),
-    },
-);
+    assign("aassign",
+        listop("list", padav("a")),
+        listop("list", const(\1), const(\2))));
 
 is_sub_tree(
     sub {
         my ($a, @b) = (1, my @c);
     },
 
-    {
-        op => "aassign",
-        lvalue => listop("list", padsv("a"), padav("b")),
-        rvalue => listop("list", const(\1), padav("c")),
-    },
-);
+    assign("aassign",
+        listop("list", padsv("a"), padav("b")),
+        listop("list", const(\1), padav("c"))));
 
 is_sub_tree(
     sub {
         my %a = (b => 1, c => my $d);
     },
 
-    {
-        op => "aassign",
-        lvalue => listop("list", padhv("a")),
-        rvalue => listop("list",
+    assign("aassign",
+        listop("list", padhv("a")),
+        listop("list",
             const(\"b"),
             const(\1),
             const(\"c"),
-            padsv("d")),
-    }
-);
+            padsv("d"))));
 
 is_sub_tree(
     sub { shift },
