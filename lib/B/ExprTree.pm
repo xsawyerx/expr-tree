@@ -76,7 +76,6 @@ $ops{leavesub} = sub {
     return expr($scope, $op->first);
 };
 
-
 $ops{enter} =
 $ops{padrange} =
 $ops{pushmark} =
