@@ -37,4 +37,15 @@ is_sub_tree(
             const(\3)),
     padsv("c", 1)));
 
+# check that add with lexical target is expanded.
+is_sub_tree(
+    sub { $a = $a + 1 },
+    {
+         op => "sassign",
+         lvalue => padsv("a", 1),
+         rvalue => binop("add",
+             padsv("a", 1),
+             const(\1)),
+    });
+
 done_testing;

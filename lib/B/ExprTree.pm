@@ -176,10 +176,25 @@ $ops{sge} =
 $ops{sgt} =
 sub {
     my ($scope, $op) = @_;
-    return {
+
+    my $res = {
         op => opname($op),
         args => [ map expr($scope, $op->$_), qw/first last/ ],
     };
+
+    if ($op->private & B::OPpTARGET_MY) {
+        return {
+            op => "sassign",
+            lvalue => {
+                op => "padsv",
+                pad_entry => $scope->{vars}->[$op->targ],
+            },
+            rvalue => $res,
+        };
+    }
+    else {
+        return $res;
+    }
 };
 
 $ops{rv2av} = sub {
