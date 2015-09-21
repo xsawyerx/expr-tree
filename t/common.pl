@@ -83,3 +83,12 @@ sub listop {
     };
 }
 
+sub assign {
+    my ($op, $lvalue, $rvalue) = @_;
+    return {
+        op => $op,
+        lvalue => $lvalue,
+        rvalue => $rvalue,
+    };
+}
+
