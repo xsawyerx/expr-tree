@@ -11,7 +11,7 @@ is_sub_tree(
     {
         op => "leaveloop",
         pred => padsv("x"),
-        body => listop("lineseq", 
+        body => listop("lineseq",
             listop("scope", padsv("x"))),
     });
 

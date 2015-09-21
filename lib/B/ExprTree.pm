@@ -303,7 +303,7 @@ sub assert {
 
 $ops{leaveloop} = sub {
     my ($scope, $op) = @_;
-    
+
     assert($op, $op->first, "enterloop");
 
     assert($op, my $null = $op->last, "null");
