@@ -76,6 +76,7 @@ $ops{leavesub} = sub {
     return expr($scope, $op->first);
 };
 
+$ops{unstack} =
 $ops{enter} =
 $ops{padrange} =
 $ops{pushmark} =
@@ -273,6 +274,31 @@ $ops{shift} = sub {
     else {
         die "unknown op_shift class: $class";
     }
+};
+
+sub assert {
+    my ($self, $targ, $name) = @_;
+
+    $self = opname($self);
+    $targ = opname($targ);
+
+    die "$self: unexpected child $targ"
+        unless $targ eq $name;
+}
+
+$ops{leaveloop} = sub {
+    my ($scope, $op) = @_;
+    
+    assert($op, $op->first, "enterloop");
+
+    assert($op, my $null = $op->last, "null");
+    assert($op, my $cond = $null->first, "and");
+
+    return {
+        op => opname($op),
+        pred => expr($scope, $cond->first),
+        body => expr($scope, $cond->first->sibling),
+    };
 };
 
 1;
