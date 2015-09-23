@@ -25,6 +25,15 @@ is_sub_tree(
 
 is_sub_tree(
     sub {
+        my ($x, $y) = @_;
+    },
+
+    assign("aassign",
+        listop("list", padsv("x"), padsv("y")),
+        listop("list", unop("rv2av", gv("_")))));
+
+is_sub_tree(
+    sub {
         my ($a, @b) = (1, my @c);
     },
 
