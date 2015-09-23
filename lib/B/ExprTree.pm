@@ -210,6 +210,7 @@ $ops{rv2av} = sub {
     };
 };
 
+$ops{negate} =
 $ops{rv2hv} = sub {
     my ($scope, $op) = @_;
     return {

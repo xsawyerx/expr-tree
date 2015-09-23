@@ -8,12 +8,12 @@ require "common.pl";
 my ($a, $b, $c, $d);
 
 is_sub_tree(
-    sub { $a + $b - 24 * $c / $d % 42 },
+    sub { $a + -$b - 24 * $c / $d % 42 },
 
     binop("subtract",
         binop("add",
             padsv("a", 1),
-            padsv("b", 1)),
+            unop("negate", padsv("b", 1))),
         binop("modulo",
             binop("divide",
                 binop("multiply",
