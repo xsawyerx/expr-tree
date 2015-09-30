@@ -10,6 +10,10 @@ is_sub_tree(
     const(\1));
 
 is_sub_tree(
+    sub { -1.5e-1 },
+    const(\-1.5e-1));
+
+is_sub_tree(
     sub { my $var },
     padsv("var", 0),
 );
