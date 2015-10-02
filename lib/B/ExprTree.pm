@@ -52,12 +52,12 @@ sub expr {
     my $name = opname($op);
     my $impl = $ops{$name} // die "unsupported op $name of type $type";
 
-    my @def;
-
-    push @def, location => $scope->{location}
+    my %def;
+    $def{op} = $name;
+    $def{location} = $scope->{location}
         unless $scope->{args}{no_locations};
 
-    my @ops = map +{ @def, %$_ }, $impl->($scope, $op);
+    my @ops = map +{ %def, %$_ }, $impl->($scope, $op);
 
     wantarray ? @ops : $ops[0];
 }
@@ -114,7 +114,6 @@ $ops{lineseq} = sub {
     }
 
     return {
-        op => opname($op),
         list => \@list,
     };
 };
@@ -125,7 +124,6 @@ $ops{padhv} =
 $ops{padsv} = sub {
     my ($scope, $op) = @_;
     return {
-        op => opname($op),
         pad_entry => $scope->{vars}->[$op->targ],
     };
 };
@@ -133,7 +131,6 @@ $ops{padsv} = sub {
 $ops{gv} = sub {
     my ($scope, $op) = @_;
     return {
-        op => opname($op),
         pad_entry => $scope->{vars}->[$op->padix],
     };
 };
@@ -141,14 +138,12 @@ $ops{gv} = sub {
 $ops{undef} = sub {
     my ($scope, $op) = @_;
     return {
-        op => "undef",
     };
 };
 
 $ops{cond_expr} = sub {
     my ($scope, $op) = @_;
     return {
-        op => opname($op),
         pred => expr($scope, $op->first),
         then => expr($scope, $op->first->sibling),
         else => expr($scope, $op->first->sibling->sibling),
@@ -161,7 +156,6 @@ $ops{xor} =
 sub {
     my ($scope, $op) = @_;
     return {
-        op => opname($op),
         args => [
             expr($scope, $op->first),
             expr($scope, $op->first->sibling),
@@ -220,7 +214,6 @@ $ops{rv2av} = sub {
     }
 
     return {
-        op => opname($op),
         arg => expr($scope, $op->first),
     };
 };
@@ -230,7 +223,6 @@ $ops{negate} =
 $ops{rv2hv} = sub {
     my ($scope, $op) = @_;
     return {
-        op => opname($op),
         arg => expr($scope, $op->first),
     };
 };
@@ -243,7 +235,6 @@ $ops{aelem} = sub {
     };
 
     return {
-        op => opname($op),
         array => expr($scope, $op->first),
         index => expr($scope, $op->last),
     };
@@ -252,7 +243,6 @@ $ops{aelem} = sub {
 $ops{aelemfast} = sub {
     my ($scope, $op) = @_;
     return {
-        op => opname($op),
         pad_entry => $scope->{vars}->[$op->padix],
         index => $op->private,
     };
@@ -261,7 +251,6 @@ $ops{aelemfast} = sub {
 $ops{aelemfast_lex} = sub {
     my ($scope, $op) = @_;
     return {
-        op => opname($op),
         pad_entry => $scope->{vars}->[$op->targ],
         index => $op->private,
     };
@@ -270,7 +259,6 @@ $ops{aelemfast_lex} = sub {
 $ops{helem} = sub {
     my ($scope, $op) = @_;
     return {
-        op => opname($op),
         hash => expr($scope, $op->first),
         key => expr($scope, $op->last),
     };
@@ -280,7 +268,6 @@ $ops{sassign} =
 $ops{aassign} = sub {
     my ($scope, $op) = @_;
     return {
-        op => opname($op),
         rvalue => expr($scope, $op->first),
         lvalue => expr($scope, $op->last),
     };
@@ -293,13 +280,11 @@ $ops{shift} = sub {
     my $class = ref $op;
     if ($class eq "B::UNOP") {
         return {
-            op => opname($op),
             arg => expr($scope, $op->first),
         };
     }
     elsif ($class eq "B::OP") {
         return {
-            op => opname($op),
             arg => undef,
         };
     }
@@ -327,7 +312,6 @@ $ops{leaveloop} = sub {
     assert($op, my $cond = $null->first, "and");
 
     return {
-        op => opname($op),
         pred => expr($scope, $cond->first),
         body => expr($scope, $cond->first->sibling),
     };
