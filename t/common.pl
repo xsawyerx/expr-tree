@@ -8,7 +8,7 @@ require_ok "B::ExprTree";
 sub is_sub_tree {
     my ($code, @seq) = @_;
 
-    my $tree = B::ExprTree::build($code);
+    my $tree = B::ExprTree::build($code, no_locations => 1);
 
     is_deeply $tree->{root}, {
         op => "lineseq",

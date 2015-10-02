@@ -52,14 +52,22 @@ sub expr {
     my $name = opname($op);
     my $impl = $ops{$name} // die "unsupported op $name of type $type";
 
-    return $impl->($scope, $op);
+    my @def;
+
+    push @def, location => $scope->{location}
+        unless $scope->{args}{no_locations};
+
+    my @ops = map +{ @def, %$_ }, $impl->($scope, $op);
+
+    wantarray ? @ops : $ops[0];
 }
 
 sub build {
-    my ($code) = @_;
+    my ($code, %args) = @_;
 
     my $obj = B::svref_2object $code;
     my $scope = {
+        args => \%args,
         vars => codevars($obj),
     };
 
@@ -81,8 +89,13 @@ $ops{leavesub} = sub {
 $ops{unstack} =
 $ops{enter} =
 $ops{padrange} =
-$ops{pushmark} =
+$ops{pushmark} = sub {
+    return ();
+};
+
 $ops{nextstate} = sub {
+    my ($scope, $op) = @_;
+    $scope->{location} = { file => $op->file, line => $op->line } if $op->can("file");
     return ();
 };
 
