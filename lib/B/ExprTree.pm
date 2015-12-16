@@ -19,7 +19,7 @@ sub codevars {
         my $name_sv = $names[$idx];
         my $is_special = $name_sv->isa("B::SPECIAL");
 
-        my $name = $is_special ? "<special>" : $name_sv->PV;
+        my $name = $is_special ? undef : $name_sv->PV;
 
         my $value_sv = $values[$idx];
         my $value_ref = $value_sv->isa("B::SPECIAL") ? $value_sv : $value_sv->object_2svref;

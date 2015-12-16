@@ -56,7 +56,7 @@ is_sub_tree(
     sub { $B::EXPORT_OK[1] },
     {
         op => "aelemfast",
-        pad_entry => { name => "<special>", outer => 0, value => \*B::EXPORT_OK },
+        pad_entry => { name => undef, outer => 0, value => \*B::EXPORT_OK },
         index => 1,
     });
 

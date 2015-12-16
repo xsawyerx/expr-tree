@@ -30,7 +30,7 @@ is_deeply $tree->{root}, {
                 op => "const",
                 location => { file => $0, line => 8 },
                 pad_entry => {
-                    name => "<special>",
+                    name => undef,
                     outer => 0,
                     value => \1,
                 },

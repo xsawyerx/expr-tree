@@ -32,7 +32,7 @@ sub padop {
 }
 
 sub const {
-    padop("const", "<special>", 0, shift)
+    padop("const", undef, 0, shift)
 }
 
 sub padsv {
@@ -56,7 +56,7 @@ sub padhv {
 sub gv {
     my ($name) = @_;
     no strict "refs";
-    padop("gv", "<special>", 0, \*{$name});
+    padop("gv", undef, 0, \*{$name});
 }
 
 sub unop {
