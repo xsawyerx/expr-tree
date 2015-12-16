@@ -68,6 +68,7 @@ sub build {
     my $obj = B::svref_2object $code;
     my $scope = {
         args => \%args,
+        obj => $obj,
         vars => codevars($obj),
     };
 
@@ -222,7 +223,7 @@ sub {
 $ops{rv2av} = sub {
     my ($scope, $op) = @_;
 
-    if ($op->name eq "null" && opname($op->first) eq "aelemfast") {
+    if ($op->name eq "null") {
         return expr($scope, $op->first);
     }
 
@@ -243,9 +244,9 @@ $ops{rv2hv} = sub {
 $ops{aelem} = sub {
     my ($scope, $op) = @_;
 
-    if (ref $op eq "B::UNOP" && $op->name eq "null") {
+    if ($op->name eq "null") {
         return expr($scope, $op->first);
-    };
+    }
 
     return {
         array => expr($scope, $op->first),
@@ -255,8 +256,22 @@ $ops{aelem} = sub {
 
 $ops{aelemfast} = sub {
     my ($scope, $op) = @_;
+
+    my $pe;
+
+    if ($op->isa("B::PADOP")) {
+        $pe = $scope->{vars}->[$op->padix];
+    }
+    elsif ($op->isa("B::SVOP")) {
+        $pe = {
+            name => undef,
+            outer => 0,
+            value => $op->sv->object_2svref,
+        };
+    }
+
     return {
-        pad_entry => $scope->{vars}->[$op->padix],
+        pad_entry => $pe,
         index => $op->private,
     };
 };
@@ -271,6 +286,11 @@ $ops{aelemfast_lex} = sub {
 
 $ops{helem} = sub {
     my ($scope, $op) = @_;
+
+    if ($op->name eq "null") {
+        return expr($scope, $op->first);
+    }
+
     return {
         hash => expr($scope, $op->first),
         key => expr($scope, $op->last),
@@ -328,6 +348,191 @@ $ops{leaveloop} = sub {
         pred => expr($scope, $cond->first),
         body => expr($scope, $cond->first->sibling),
     };
+};
+
+sub _md_object {
+    my ($scope, $action, $items, $op, $chain) = @_;
+
+    if ($action == B::MDEREF_AV_pop_rv2av_aelem()) {
+        return "av", {
+            op => "rv2av",
+            arg => expr($scope, $op->first),
+        };
+    }
+
+    elsif ($action == B::MDEREF_AV_padsv_vivify_rv2av_aelem()) {
+        my $pe = $scope->{vars}->[shift @$items];
+        return "av", {
+            op => "rv2av",
+            arg => {
+                op => "padsv",
+                pad_entry => $pe,
+            }
+        };
+    }
+
+    elsif ($action == B::MDEREF_AV_vivify_rv2av_aelem()) {
+        return "av", {
+            op => "rv2av",
+            arg => $chain,
+        };
+    }
+
+    elsif ($action == B::MDEREF_AV_padav_aelem()) {
+        my $pe = $scope->{vars}->[shift @$items];
+        return "av", {
+            op => "padav",
+            pad_entry => $pe,
+        };
+    }
+
+    elsif ($action == B::MDEREF_AV_gvav_aelem()) {
+        my $gv = shift @$items // die;
+
+        return "av", {
+            op => "rv2av",
+            arg => {
+                op => "gv",
+                pad_entry => {
+                    name => undef,
+                    value => $gv->object_2svref,
+                    outer => 0,
+                },
+            },
+        };
+    }
+
+    elsif ($action == B::MDEREF_HV_pop_rv2hv_helem()) {
+        return "hv", {
+            op => "rv2hv",
+            arg => expr($scope, $op->first),
+        };
+    }
+
+    elsif ($action == B::MDEREF_HV_padsv_vivify_rv2hv_helem()) {
+        my $pe = $scope->{vars}->[shift @$items];
+
+        return "hv", {
+            op => "rv2hv",
+            arg => {
+                op => "padsv",
+                pad_entry => $pe,
+            },
+        };
+    }
+
+    elsif ($action == B::MDEREF_HV_vivify_rv2hv_helem()) {
+        return "hv", {
+            op => "rv2hv",
+            arg => $chain,
+        };
+    }
+
+    elsif ($action == B::MDEREF_HV_padhv_helem()) {
+        my $pe = $scope->{vars}->[shift @$items];
+
+        return "hv", {
+            op => "padhv",
+            pad_entry => $pe,
+        };
+    }
+
+    else {
+        die "unknown action value $action";
+    }
+
+}
+
+sub _md_index {
+    my ($scope, $index, $items) = @_;
+
+    if ($index == B::MDEREF_INDEX_none()) {
+        return undef;
+    }
+
+    elsif ($index == B::MDEREF_INDEX_const()) {
+        my $item = shift @$items;
+        my $idx = ref $item ? $item->object_2svref : \$item;
+        return {
+            op => "const",
+            value => $idx,
+        };
+    }
+
+    elsif ($index == B::MDEREF_INDEX_padsv()) {
+        my $pe = $scope->{vars}->[shift @$items];
+        return {
+            op => "padsv",
+            pad_entry => $pe,
+        }
+    }
+
+    elsif ($index == B::MDEREF_INDEX_gvsv()) {
+        my $gv = shift @$items // die;
+        return {
+            op => "gv",
+            pad_entry => {
+                name => undef,
+                outer => 0,
+                value => $gv->object_2svref,
+            },
+        };
+    }
+
+    else {
+        die "unknown index value $index";
+    }
+}
+
+$ops{multideref} = sub {
+    my ($scope, $op) = @_;
+
+    my @items = $op->aux_list($scope->{obj});
+    use Data::Dumper;
+
+    my $actions = shift @items;
+
+    my $chain;
+
+    while (1) {
+        my $action = $actions & B::MDEREF_ACTION_MASK();
+        my $index = $actions & B::MDEREF_INDEX_MASK();
+        $actions >>= B::MDEREF_SHIFT();
+
+        if ($action == B::MDEREF_reload()) {
+            $actions = shift @items // last;
+            next;
+        } else {
+            my ($kind, $obj) = _md_object($scope, $action, \@items, $op, $chain);
+            my $key = _md_index($scope, $index, \@items);
+
+            if (!defined $key) {
+                $chain = $obj;
+                last;
+            }
+            elsif ($kind eq "av") {
+                $chain = {
+                    op => "aelem",
+                    array => $obj,
+                    index => $key,
+                };
+            }
+            elsif ($kind eq "hv") {
+                $chain = {
+                    op => "helem",
+                    hash => $obj,
+                    key => $key,
+                };
+            }
+            else {
+                die "bad object kind $kind";
+            }
+        }
+    }
+
+    die unless defined $chain;
+
+    return $chain;
 };
 
 1;
