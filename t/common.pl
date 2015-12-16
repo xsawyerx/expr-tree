@@ -32,7 +32,10 @@ sub padop {
 }
 
 sub const {
-    padop("const", undef, 0, shift)
+    return {
+        op => "const",
+        value => shift,
+    };
 }
 
 sub padsv {

@@ -118,7 +118,20 @@ $ops{lineseq} = sub {
     };
 };
 
-$ops{const} =
+$ops{const} = sub {
+    my ($scope, $op) = @_;
+
+    my $svo = $op->sv;
+
+    my $svr = $$svo
+        ? $svo->object_2svref
+        : $scope->{vars}[$op->targ]{value};
+
+    return {
+        value => $svr,
+    };
+};
+
 $ops{padav} =
 $ops{padhv} =
 $ops{padsv} = sub {
